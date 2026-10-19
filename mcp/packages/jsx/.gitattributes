@@ -1,0 +1,5 @@
+# Vendored engine + generated runtime are hashed byte-for-byte (VENDORED.json, runtime.test.ts):
+# force LF on every platform so Windows checkouts (core.autocrlf=true) pass check:vendor.
+src/engine/** text eol=lf
+src/generated/** text eol=lf
+VENDORED.json text eol=lf

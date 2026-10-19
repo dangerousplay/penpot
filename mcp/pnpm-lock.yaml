@@ -195,7 +195,7 @@ importers:
         specifier: ^26.1.2
         version: 26.4.0
       esbuild:
-        specifier: ^0.28.1
+        specifier: 0.28.2
         version: 0.28.2
       tsx:
         specifier: ^4.23.5

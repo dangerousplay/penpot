@@ -9,8 +9,8 @@
   "scripts": {
     "test": "tsx --test \"src/**/*.test.ts\"",
     "types:check": "tsc --noEmit",
-    "build:runtime": "echo pending T5",
-    "check:vendor": "echo pending T5"
+    "build:runtime": "node scripts/build-runtime.mjs",
+    "check:vendor": "node scripts/check-vendor.mjs"
   },
   "packageManager": "pnpm@12.5.1+sha512.e3f305bc784a2bc89f5ad3b6138889470fae8d2af5f36b61216ec91c2c3d64089775f9de38aac331044ea40f245cb0d5666392dfdf65824e1907ef6a2c62de5f",
   "dependencies": {
@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
-    "esbuild": "^0.28.1",
+    "esbuild": "0.28.2",
     "tsx": "^4.23.5",
     "typescript": "^6.0.3"
   }

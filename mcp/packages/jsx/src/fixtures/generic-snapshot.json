@@ -1,0 +1,314 @@
+{
+	"penpotVersion": "2.18.0",
+	"file": {
+		"id": "file-1",
+		"name": "Acme App"
+	},
+	"currentPage": "Home",
+	"pages": [
+		{
+			"name": "Home",
+			"id": "p1"
+		}
+	],
+	"sets": [
+		{
+			"set": "Button",
+			"library": "Acme",
+			"libraryId": "lib-1",
+			"variantsId": "vs-1",
+			"properties": [
+				"Style",
+				"Size"
+			],
+			"values": {
+				"Style": [
+					"Primary",
+					"Secondary",
+					"Ghost"
+				],
+				"Size": [
+					"SM",
+					"MD"
+				]
+			},
+			"variants": [
+				{
+					"componentId": "b1",
+					"variantProps": {
+						"Style": "Primary",
+						"Size": "SM"
+					},
+					"mainInstanceId": "m-b1",
+					"width": 100,
+					"height": 40,
+					"textSlots": [
+						"label"
+					]
+				},
+				{
+					"componentId": "b2",
+					"variantProps": {
+						"Style": "Primary",
+						"Size": "MD"
+					},
+					"mainInstanceId": "m-b2",
+					"width": 100,
+					"height": 40,
+					"textSlots": [
+						"label"
+					]
+				},
+				{
+					"componentId": "b3",
+					"variantProps": {
+						"Style": "Secondary",
+						"Size": "MD"
+					},
+					"mainInstanceId": "m-b3",
+					"width": 100,
+					"height": 40,
+					"textSlots": [
+						"label"
+					]
+				},
+				{
+					"componentId": "b4",
+					"variantProps": {
+						"Style": "Ghost",
+						"Size": "MD"
+					},
+					"mainInstanceId": "m-b4",
+					"width": 100,
+					"height": 40,
+					"textSlots": [
+						"label"
+					]
+				}
+			]
+		},
+		{
+			"set": "Forms / Text Field",
+			"variantsId": "vs-2",
+			"properties": [
+				"State"
+			],
+			"values": {
+				"State": [
+					"Default",
+					"Error"
+				]
+			},
+			"variants": [
+				{
+					"componentId": "t1",
+					"variantProps": {
+						"State": "Default"
+					},
+					"mainInstanceId": "m-t1",
+					"width": 100,
+					"height": 40,
+					"textSlots": [
+						"label",
+						"State",
+						"label"
+					]
+				},
+				{
+					"componentId": "t2",
+					"variantProps": {
+						"State": "Error"
+					},
+					"mainInstanceId": "m-t2",
+					"width": 100,
+					"height": 40,
+					"textSlots": [
+						"label",
+						"State",
+						"label",
+						"hint"
+					]
+				}
+			]
+		},
+		{
+			"set": "Forms · Text-Field",
+			"variantsId": "vs-3",
+			"properties": [],
+			"values": {},
+			"variants": [
+				{
+					"componentId": "t3",
+					"variantProps": {},
+					"mainInstanceId": "m-t3",
+					"width": 100,
+					"height": 40,
+					"textSlots": [
+						"value"
+					]
+				}
+			]
+		},
+		{
+			"set": "iOS · Status Bar",
+			"variantsId": null,
+			"properties": [],
+			"values": {},
+			"variants": [
+				{
+					"componentId": "s1",
+					"variantProps": {},
+					"mainInstanceId": "m-s1",
+					"width": 100,
+					"height": 40,
+					"textSlots": [
+						"time"
+					]
+				}
+			]
+		},
+		{
+			"set": "Android · Status Bar",
+			"variantsId": null,
+			"properties": [],
+			"values": {},
+			"variants": [
+				{
+					"componentId": "s2",
+					"variantProps": {},
+					"mainInstanceId": "m-s2",
+					"width": 100,
+					"height": 40,
+					"textSlots": [
+						"time"
+					]
+				}
+			]
+		},
+		{
+			"set": "2-col Card",
+			"variantsId": null,
+			"properties": [],
+			"values": {},
+			"variants": [
+				{
+					"componentId": "c1",
+					"variantProps": {},
+					"mainInstanceId": "m-c1",
+					"width": 100,
+					"height": 40,
+					"textSlots": [
+						"title"
+					]
+				}
+			]
+		},
+		{
+			"set": "Plain",
+			"variantsId": null,
+			"properties": [],
+			"values": {},
+			"variants": [
+				{
+					"componentId": "p1c",
+					"variantProps": {}
+				}
+			]
+		}
+	],
+	"presets": [
+		{
+			"name": "Web · Home",
+			"width": 1440,
+			"height": 900
+		},
+		{
+			"name": "iOS · Home",
+			"width": 393,
+			"height": 852
+		},
+		{
+			"name": "Scratch",
+			"width": 10,
+			"height": 10
+		}
+	],
+	"tokens": {
+		"sets": [
+			{
+				"name": "semantic",
+				"active": true,
+				"tokens": [
+					{
+						"name": "color.brand",
+						"type": "color",
+						"value": "#0ea5e9"
+					},
+					{
+						"name": "color.text.accent",
+						"type": "color",
+						"value": "{color.brand}",
+						"resolvedValue": "#0369a1"
+					},
+					{
+						"name": "spacing.md",
+						"type": "spacing",
+						"value": "16"
+					},
+					{
+						"name": "spacing.lg",
+						"type": "dimension",
+						"value": "24px"
+					},
+					{
+						"name": "size.icon",
+						"type": "dimension",
+						"value": "20"
+					},
+					{
+						"name": "radius.lg",
+						"type": "borderRadius",
+						"value": "12"
+					},
+					{
+						"name": "shadow.soft",
+						"type": "shadow",
+						"value": [
+							{
+								"offsetX": "0"
+							}
+						]
+					}
+				]
+			},
+			{
+				"name": "overrides",
+				"active": true,
+				"tokens": [
+					{
+						"name": "color.brand.primary",
+						"type": "color",
+						"value": "#111111"
+					},
+					{
+						"name": "color.brand-primary",
+						"type": "color",
+						"value": "#222222"
+					}
+				]
+			},
+			{
+				"name": "dark",
+				"active": false,
+				"tokens": [
+					{
+						"name": "color.brand",
+						"type": "color",
+						"value": "#000000"
+					}
+				]
+			}
+		],
+		"themes": []
+	}
+}
