@@ -10,6 +10,7 @@ export type TransportErrorCode =
     | "SESSION_AMBIGUOUS"
     | "PLUGIN_TIMEOUT"
     | "RUNTIME_INSTALL_FAILED"
+    | "INTERNAL"
     | "SELECTION_EMPTY"
     | "RESULT_TOO_LARGE"
     | "SOURCE_TOO_LARGE"
@@ -138,6 +139,7 @@ export const KNOWN_ERROR_CODES: ReadonlySet<string> = new Set<ToolErrorCode>([
     "SESSION_AMBIGUOUS",
     "PLUGIN_TIMEOUT",
     "RUNTIME_INSTALL_FAILED",
+    "INTERNAL",
     "SELECTION_EMPTY",
     "RESULT_TOO_LARGE",
     "SOURCE_TOO_LARGE",

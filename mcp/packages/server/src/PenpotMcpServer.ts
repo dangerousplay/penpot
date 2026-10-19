@@ -20,6 +20,8 @@ import { ReadTaigaIssueTool } from "./tools/ReadTaigaIssueTool";
 import { NreplClient } from "./NreplClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
+import { loadJsxConfig } from "./jsx/JsxConfig";
+import { createJsxTools } from "./jsx/registerJsxTools";
 
 /**
  * Session context for request-scoped data.
@@ -269,6 +271,11 @@ export class PenpotMcpServer {
         return this.sessionContext.getStore();
     }
 
+    /** Names of the registered tools, in registration order. */
+    public getRegisteredToolNames(): string[] {
+        return this.tools.map((t) => t.name);
+    }
+
     private initTools(): ToolInfo[] {
         const toolInstances: Tool<any>[] = [
             new ExecuteCodeTool(this),
@@ -287,6 +294,9 @@ export class PenpotMcpServer {
             toolInstances.push(new CljCheckParentheses(this));
             toolInstances.push(new ReadTaigaIssueTool(this));
         }
+
+        // JSX tools: registered unless PENPOT_MCP_JSX_ENABLE=false or the task timeout is below 30 s
+        toolInstances.push(...createJsxTools(this, loadJsxConfig(process.env, this.logger)));
 
         return toolInstances.map((instance) => {
             this.logger.info(`Registering tool: ${instance.getToolName()}`);

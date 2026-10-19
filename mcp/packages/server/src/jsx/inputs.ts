@@ -83,7 +83,7 @@ function resolveGuardedFile(fsAccess: FsAccess | undefined, filePath: string, sp
     return real;
 }
 
-function isUnderRoots(real: string, roots: readonly string[]): boolean {
+export function isUnderRoots(real: string, roots: readonly string[]): boolean {
     return roots.some((root) => {
         let realRoot: string;
         try {
