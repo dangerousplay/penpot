@@ -5,3 +5,5 @@ python-scripts/
 
 # auto-generated files
 mcp-server/data/api_types.yml
+packages/jsx/src/engine/
+packages/jsx/src/generated/

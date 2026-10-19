@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "@penpot/mcp-common": "workspace:../common",
+    "@penpot/mcp-jsx": "workspace:../jsx",
     "@types/express": "^5.0.6",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^26.1.2",
