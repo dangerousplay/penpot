@@ -4,7 +4,7 @@ import { PenpotMcpServer } from "../PenpotMcpServer";
 import { loadJsxConfig } from "./JsxConfig";
 import { createJsxTools } from "./registerJsxTools";
 
-const JSX_TOOLS = ["jsx_components", "jsx_push", "jsx_pull", "jsx_compare"];
+const JSX_TOOLS = ["jsx_components", "jsx_push", "jsx_pull", "jsx_compare", "tokens_check", "tokens_push"];
 const quiet = { info() {}, warn() {}, error() {} };
 
 async function withServer(env: Record<string, string>, run: (server: PenpotMcpServer) => void): Promise<void> {
@@ -27,7 +27,7 @@ async function withServer(env: Record<string, string>, run: (server: PenpotMcpSe
     }
 }
 
-test("PenpotMcpServer registers the 4 JSX tools by default", async () => {
+test("PenpotMcpServer registers the 6 JSX tools by default", async () => {
     await withServer({}, (server) => {
         const names = server.getRegisteredToolNames();
         for (const name of JSX_TOOLS) assert.ok(names.includes(name), `${name} missing from ${names.join(",")}`);
@@ -60,7 +60,7 @@ test("tool descriptions stay within 900 characters, name the next tool and schem
         for (const tool of tools) {
             const description = tool.getToolDescription();
             assert.ok(description.length <= 900, `${tool.getToolName()} description is ${description.length}`);
-            assert.match(description, /jsx_(push|compare|pull)/);
+            assert.match(description, /(jsx_(push|compare|pull)|tokens_(check|push))/);
             assert.ok(Object.keys(tool.getInputSchema()).length > 0);
         }
     });

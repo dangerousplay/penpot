@@ -30,6 +30,8 @@ export class JsxToolError extends Error {
     path?: string;
     hint?: string;
     valid?: string[];
+    /** extra top-level fields of the failure result (for example a report the agent should see) */
+    payload?: Record<string, unknown>;
 
     constructor(code: ToolErrorCode, message: string, where: JsxErrorWhere = {}) {
         super(message);
@@ -105,7 +107,12 @@ export function fail(
         if (error.hint !== undefined) base.hint = error.hint;
         if (error.valid !== undefined) base.valid = error.valid;
     }
-    const body = { ok: false, error: { code, message: text, ...base, ...extra } };
+    // Payload first so it can never overwrite the reserved `ok` / `error` keys.
+    const body = {
+        ...(typeof error !== "string" && "payload" in error && error.payload !== undefined ? error.payload : {}),
+        ok: false,
+        error: { code, message: text, ...base, ...extra },
+    };
     return new TextResponse(JSON.stringify(body));
 }
 

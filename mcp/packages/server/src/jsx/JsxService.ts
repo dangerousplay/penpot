@@ -9,6 +9,7 @@ import {
     isForbiddenPage,
     isJsxError,
     mergeGuards,
+    parseDtcg,
     prepareScreen,
     pullBoard,
     replay,
@@ -17,6 +18,7 @@ import {
     themeFromTokens,
     transpile,
     type CompiledMessages,
+    type DesiredToken,
     type Element,
     type LiveSnapshot,
     type Messages,
@@ -25,13 +27,14 @@ import {
     type RScreen,
     type Registry,
     type ScreenNode,
+    type TokenReport,
     type Theme,
 } from "@penpot/mcp-jsx";
 import type { TextResponse } from "../ToolResponse";
 import { createLogger } from "../logger";
 import type { JsxConfig } from "./JsxConfig";
 import type { RuntimeClient } from "./JsxRuntimeClient";
-import { loadMessages, loadProfile, loadSource, type FsAccess } from "./inputs";
+import { loadMessages, loadProfile, loadSource, loadTokens, type FsAccess } from "./inputs";
 import { MAX_INLINE_JSX_BYTES, checkOutPath, writeOutput } from "./outputs";
 import { JsxToolError, fail, ok, type ToolErrorCode } from "./results";
 
@@ -41,6 +44,12 @@ export const MAX_SCREENS_CEILING = 24;
 export const SETTLE_TTL_MS = 10 * 60 * 1000;
 /** Detail snapshots are fetched for every matched set only up to this many sets (design section 5). */
 export const AUTO_DETAIL_SETS = 60;
+/** Tokens per plugin task in `tokens_push` (design section 9.6). */
+export const TOKENS_BATCH_SIZE = 200;
+/** Conflict entries listed by the token tools (design section 9.5). */
+export const MAX_TOKEN_CONFLICTS = 50;
+/** Penpot-only token names sampled by `tokens_check` (design section 9.5). */
+export const MAX_PENPOT_ONLY_SAMPLE = 20;
 /** Warnings listed in a result before the rest are replaced by a count (design section 8). */
 export const MAX_RESULT_WARNINGS = 40;
 
@@ -128,6 +137,15 @@ export interface PullArgs {
     locale?: string;
     outPath?: string;
     profile?: unknown;
+}
+
+export interface TokensArgs {
+    tokens?: unknown;
+    tokensPath?: string;
+}
+
+export interface TokensPushArgs extends TokensArgs {
+    confirm?: boolean;
 }
 
 type Payload = Record<string, unknown>;
@@ -498,6 +516,112 @@ export class JsxService {
             out.jsx = pulled.jsx;
         }
         return out;
+    }
+
+    // ── tokens_check / tokens_push ────────────────────────────────────────────────────
+
+    async tokensCheck(args: TokensArgs): Promise<Payload> {
+        const t0 = this.clock.now();
+        const raw = loadTokens(args, this.deps.fs);
+        if (raw === undefined) return this.tokenInventory(t0);
+        const desired = parseDtcg(raw);
+        const report = await this.tokenReport(desired);
+        return { ms: this.clock.now() - t0, runtimeVersion: RUNTIME_VERSION, ...this.checkView(report) };
+    }
+
+    async tokensPush(args: TokensPushArgs): Promise<Payload> {
+        const t0 = this.clock.now();
+        const raw = loadTokens(args, this.deps.fs);
+        if (raw === undefined) throw new JsxToolError("INVALID_ARGS", "pass either tokens or tokensPath");
+        const desired = parseDtcg(raw);
+        if (desired.length === 0) throw new JsxToolError("INVALID_ARGS", "tokens contains no tokens");
+
+        if (args.confirm !== true) {
+            const report = await this.tokenReport(desired);
+            const err = new JsxToolError(
+                "TOKENS_CONFIRM_REQUIRED",
+                "tokens_push writes to the file's token library; nothing was written",
+                { hint: "show this report to the user, then call again with confirm=true" }
+            );
+            err.payload = { dryRun: true, report: this.checkView(report) };
+            throw err;
+        }
+
+        const batches: DesiredToken[][] = [];
+        for (let i = 0; i < desired.length; i += TOKENS_BATCH_SIZE) {
+            batches.push(desired.slice(i, i + TOKENS_BATCH_SIZE));
+        }
+        let added = 0;
+        let updated = 0;
+        let setsCreated = 0;
+        for (const [i, batch] of batches.entries()) {
+            try {
+                // only add and same-type update ever reach the runtime: there is no delete operation
+                const call = await this.deps.client.call<TokenReport>(
+                    "tokens",
+                    { desired: batch, dryRun: false },
+                    { budgetMs: this.deps.config.budgetMs("tokens") }
+                );
+                added += call.value.added;
+                updated += call.value.updated;
+                setsCreated += call.value.setsCreated;
+                this.log("tokens", `batch ${i + 1}/${batches.length}`, call.ms);
+            } catch (e) {
+                const err = toolError(e) ?? internalError(e, this.logger);
+                err.hint = `batch ${i + 1} of ${batches.length} failed after ${i} applied; pushing is idempotent, call again`;
+                throw err;
+            }
+        }
+        await this.clock.sleep(this.deps.config.settleMs);
+        const check = await this.tokenReport(desired);
+        return {
+            ms: this.clock.now() - t0,
+            runtimeVersion: RUNTIME_VERSION,
+            pushed: { added, updated, setsCreated, batches: batches.length },
+            check: this.checkView(check),
+        };
+    }
+
+    private async tokenReport(desired: DesiredToken[]): Promise<TokenReport> {
+        const call = await this.deps.client.call<TokenReport>(
+            "tokens",
+            { desired, dryRun: true },
+            { budgetMs: this.deps.config.budgetMs("tokens") }
+        );
+        return call.value;
+    }
+
+    private checkView(r: TokenReport): Payload {
+        return {
+            added: r.added,
+            updated: r.updated,
+            unchanged: r.unchanged,
+            conflicts: r.conflicts.slice(0, MAX_TOKEN_CONFLICTS),
+            conflictsCount: r.conflicts.length,
+            aliasConflicts: r.aliasConflicts.slice(0, MAX_TOKEN_CONFLICTS),
+            aliasConflictsCount: r.aliasConflicts.length,
+            unrepresentable: r.unrepresentable,
+            penpotOnlyCount: r.penpotOnly,
+            penpotOnlySample: r.details.penpotOnly.slice(0, MAX_PENPOT_ONLY_SAMPLE),
+        };
+    }
+
+    private async tokenInventory(t0: number): Promise<Payload> {
+        const snap = await this.snapshot({ libraries: "local", tokens: true });
+        const catalog = snap.tokens ?? { sets: [], themes: [] };
+        const theme = themeFromTokens(catalog, this.deps.config.profile);
+        return {
+            ...this.envelope(snap, t0),
+            sets: catalog.sets.map((s) => ({ name: s.name, active: s.active, count: s.tokens.length })),
+            themes: catalog.themes,
+            themeKeys: {
+                colors: Object.keys(theme.colors).length,
+                spacing: Object.keys(theme.spacing).length,
+                radius: Object.keys(theme.radius).length,
+                shadow: Object.keys(theme.shadow).length,
+            },
+            collisions: theme.collisions,
+        };
     }
 
     // ── shared steps ──────────────────────────────────────────────────────────────────

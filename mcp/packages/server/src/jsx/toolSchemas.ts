@@ -22,6 +22,19 @@ export const FS_ROOTS_NOTE =
     "Path arguments work in local mode only and need absolute paths; without PENPOT_MCP_JSX_FS_ROOTS any " +
     "absolute .json/.jsx/.tsx file on this machine is readable, so set it to restrict them.";
 
+export const tokensField = z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe(
+        'Design tokens in Penpot multi-set DTCG form: {"<set>": {group: {name: {$type, $value}}}}; at most 1 MiB. ' +
+            "Not together with tokensPath."
+    );
+
+export const tokensPathField = z
+    .string()
+    .optional()
+    .describe("Local mode only: absolute path of a DTCG .json file (at most 2 MiB). Not together with tokens.");
+
 export const authoringShape = {
     source: z
         .string()

@@ -4,6 +4,8 @@ import { JsxComponentsTool } from "../tools/JsxComponentsTool";
 import { JsxCompareTool } from "../tools/JsxCompareTool";
 import { JsxPullTool } from "../tools/JsxPullTool";
 import { JsxPushTool } from "../tools/JsxPushTool";
+import { TokensCheckTool } from "../tools/TokensCheckTool";
+import { TokensPushTool } from "../tools/TokensPushTool";
 import type { JsxConfig } from "./JsxConfig";
 import { JsxRuntimeClient, type RuntimeClient } from "./JsxRuntimeClient";
 import { JsxService } from "./JsxService";
@@ -32,5 +34,7 @@ export function createJsxTools(
         new JsxPushTool(server, service),
         new JsxPullTool(server, service),
         new JsxCompareTool(server, service),
+        new TokensCheckTool(server, service),
+        new TokensPushTool(server, service),
     ];
 }

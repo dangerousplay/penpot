@@ -400,6 +400,96 @@ Removing tokens:
   Simply set the respective property directly - token binding is automatically removed, e.g.
   shape.fills = [{ fillColor: "#000000", fillOpacity: 1 }]; // Removes fill token
 
+# Design JSX tools
+
+Six tools build and check screens from JSX source and design tokens. They are not part of `execute_code`:
+`jsx_components`, `jsx_push`, `jsx_compare`, `jsx_pull`, `tokens_check` and `tokens_push`.
+They need the Penpot MCP plugin to be open in the file.
+
+When to use them:
+
+* Use them for screens made of the file's library components (buttons, cards, navigation bars, forms).
+  The components are the contract; the JSX only arranges them and fills their text slots.
+* Use `execute_code` instead for free-form vector art, illustrations, one-off shapes and anything that is not a
+  library component. Do not call `execute_code` while a `jsx_push` or `tokens_push` is running.
+
+Authoring rules:
+
+* Call `jsx_components` first. Use exactly the tags it lists and exact variant values (case and spelling).
+  Never guess a tag or a prop value; `JSX_UNKNOWN_COMPONENT` and `JSX_INVALID_VARIANT` list the valid ones.
+* The source is a module that imports from `"@penpot/jsx"` and does `export default` of one `<Screen>` or an array of
+  them. Only that import (and the file's own component namespaces) is allowed. There is no network, no file access.
+* `<Screen id title platform>`: `id` is a stable upsert key. Pushing the same id replaces the board; a new id
+  creates a new board. Never reuse an id for a different screen.
+* Text: `t("key", { n: 3 })` reads the copy from `messages` (with `locale` for plurals); a plain string is literal
+  text. Prefer `t()` when the product has translations; pass `messages` or `messagesPath` (local mode only).
+  With `strict: true` a missing prop, slot, class or message is an error instead of a warning.
+* Layout and style go through `className`: `bg-<color>`, `text-<color>`, `p-<spacing>`, `gap-<spacing>`,
+  `rounded-<radius>`, `shadow-<shadow>`, `w-full`, `flex-1`, `items-*`, `justify-*`. Names come from the file's
+  design tokens (`jsx_components` reports how many it found). Unknown classes become warnings.
+
+The loop:
+
+1. `jsx_components` (optionally with `filter`) to learn the tags.
+2. `jsx_push` with `dryRun: true`. It validates everything and writes nothing. Fix every error.
+3. `jsx_push`. Screens are rendered one per plugin task; a failing screen does not stop the others.
+4. `jsx_compare` with the same arguments. It diffs the boards against the source. Fix the source and push again
+   until `equal` is true for every screen.
+5. `jsx_pull` reads an existing board back as JSX (`board` name or id, optional `outPath` in local mode).
+
+Budgets and `pending`: one call has a time budget and a screen cap (`maxScreens`, at most 24). Screens that
+were not reached are listed in `pending`: call again with `screens` set to that list. `jsx_compare` waits about 2 s
+after a recent push so Penpot can settle; do not retry it in a tight loop.
+
+Page guards: protected pages are never written (`PAGE_FORBIDDEN`). Pushes go to the default page unless `page` is
+given; pick another page when you get this error. Do not try to bypass a guard.
+
+Tokens:
+
+* `tokens_check` is read-only. With `tokens` (Penpot multi-set DTCG: `{"<set>": {"group": {"name": {"$type":
+  "color", "$value": "#fff"}}}}`) it reports `added`, `updated`, `unchanged`, `conflicts`, `aliasConflicts`,
+  `unrepresentable` and `penpotOnlyCount`. Without `tokens` it lists the file's token sets and themes.
+* `tokens_push` writes. It refuses with `TOKENS_CONFIRM_REQUIRED` (and the dry-run report) unless `confirm: true`.
+  Show the counts to the user and ask before confirming. It adds and updates only; it never deletes.
+  A type mismatch or a Penpot alias whose value differs from the input is a conflict: it is reported and not
+  written, a human resolves it in Penpot. A shadow with negative spread is `unrepresentable` and skipped.
+  The result holds the post-push `check`; `conflicts` and `unrepresentable` there are expected, not failures.
+
+Errors (the result is `{ok: false, error: {code, message, line?, path?, hint?, valid?}}`):
+
+* `JSX_SYNTAX`, `JSX_IMPORT`, `JSX_EVAL`, `JSX_NO_SCREENS`: fix the source at `line`; do not retry unchanged.
+* `JSX_UNKNOWN_COMPONENT`, `JSX_AMBIGUOUS_TAG`, `JSX_INVALID_PROP`, `JSX_INVALID_VARIANT`, `JSX_UNKNOWN_SLOT`,
+  `JSX_MISSING_PROP`: re-read `jsx_components`, then use `valid` and `hint` to correct the tag or prop.
+* `JSX_MISSING_MESSAGE`: add the key to `messages`, or fix the key.
+* `PAGE_FORBIDDEN`: choose another `page`.
+* `PLUGIN_NOT_CONNECTED`: ask the user to open the Penpot MCP plugin in the file. `SESSION_AMBIGUOUS`: ask which
+  file or session to use.
+* `PLUGIN_TIMEOUT`, `BUDGET_EXCEEDED`: the plugin may still be working; wait, run `jsx_compare`, then continue with
+  `pending` or fewer screens.
+* `SOURCE_TOO_LARGE`, `RESULT_TOO_LARGE`: split into several pushes; for `jsx_pull` use `outPath` in local mode.
+* `FS_DISABLED`: path arguments are off in this mode; send the content inline.
+* `TOKENS_INVALID`: the DTCG document is malformed; `path` says where. `TOKENS_CONFIRM_REQUIRED`: ask, then repeat
+  with `confirm: true`.
+
+Example (a login screen with a text field and a primary button, then the checks):
+
+```
+// jsx_components {"filter": "Button"}   ->   Button{style: "Primary" | "Ghost", size: "SM" | "MD", label}
+// jsx_push {"source": "<the module below>", "page": "Drafts", "messages": {"login": {"title": "Sign in", "go": "Continue"}}, "dryRun": true}
+import { Screen, Stack, Text, Button, t } from "@penpot/jsx";
+
+export default (
+  <Screen id="login" platform="ios" title="Login" className="bg-surface">
+    <Stack className="gap-md p-lg">
+      <Text className="text-primary">{t("login.title")}</Text>
+      <Button style="Primary" size="MD" label={t("login.go")} />
+    </Stack>
+  </Screen>
+);
+// then jsx_push (same arguments without dryRun), then jsx_compare (same arguments);
+// repeat edit -> jsx_push -> jsx_compare until the screen is equal.
+```
+
 # Visual Inspection of Designs
 
 For many tasks, it can be critical to visually inspect the design. Remember to use the `export_shape` tool for this purpose!
